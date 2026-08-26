@@ -1,1 +1,1 @@
-# Testcod
+print("Привет")
