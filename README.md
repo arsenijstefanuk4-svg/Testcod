@@ -1,821 +1,610 @@
-<html lang="uk">
+<html lang="ru" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Traffic Counter & GitHub Badge Generator</title>
-    <!-- Tailwind CSS -->
+    <title>Majestic RP — Сбор Средств 8,000,000$</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js for live analytics graph -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google Fonts: Montserrat & JetBrains Mono -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        majestic: {
+                            bg: '#0a0812',
+                            card: '#130e24',
+                            purple: '#8b5cf6',
+                            purpleGlow: '#a855f7',
+                            gold: '#fbbf24',
+                            goldGlow: '#f59e0b',
+                            accent: '#22c55e',
+                            darkGlass: 'rgba(19, 14, 36, 0.75)',
+                            borderGlass: 'rgba(139, 92, 246, 0.25)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                        'wave': 'wave 4s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%': { boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)' },
+                            '100%': { boxShadow: '0 0 30px rgba(168, 85, 247, 0.8), 0 0 10px rgba(251, 191, 36, 0.4)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' }
+                        },
+                        wave: {
+                            '0%, 100%': { transform: 'rotate(-2deg)' },
+                            '50%': { transform: 'rotate(2deg)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
         body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            overflow-x: hidden;
+            background-color: #0a0812;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(245, 158, 11, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(10, 8, 18, 0.9) 0%, #0a0812 100%);
+            background-attachment: fixed;
         }
 
-        .mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Animated Odometer / Flip Digit Styling */
-        .odometer-container {
-            display: inline-flex;
-            gap: 0.35rem;
-            padding: 0.75rem 1.25rem;
-            border-radius: 1rem;
-            transition: all 0.5s ease;
-        }
-
-        .digit-box {
-            position: relative;
-            display: inline-block;
-            width: 2.2rem;
-            height: 3.2rem;
-            line-height: 3.2rem;
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 800;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-            perspective: 400px;
-        }
-
-        @media (min-width: 768px) {
-            .digit-box {
-                width: 3.2rem;
-                height: 4.5rem;
-                line-height: 4.5rem;
-                font-size: 2.75rem;
-            }
-        }
-
-        .digit-box .digit {
-            display: block;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-        }
-
-        .digit-box.changing .digit {
-            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popIn {
-            0% { transform: translateY(-40%) scale(0.8); opacity: 0.3; }
-            50% { transform: translateY(10%) scale(1.1); }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
-        }
-
-        .comma {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 3.2rem;
-            opacity: 0.7;
-        }
-        @media (min-width: 768px) {
-            .comma {
-                font-size: 2.75rem;
-                line-height: 4.5rem;
-            }
-        }
-
-        /* Themes CSS */
-        /* 1. Dark Neon */
-        .theme-dark-neon .odometer-container {
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid #00f0ff;
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
-        }
-        .theme-dark-neon .digit-box {
-            background: #020617;
-            color: #00f0ff;
-            border: 1px solid rgba(0, 240, 255, 0.4);
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
-        }
-        .theme-dark-neon .comma { color: #00f0ff; }
-
-        /* 2. Cyberpunk */
-        .theme-cyberpunk .odometer-container {
-            background: #120e24;
-            border: 2px solid #ff0055;
-            box-shadow: 0 0 25px rgba(255, 0, 85, 0.4);
-        }
-        .theme-cyberpunk .digit-box {
-            background: #ffe600;
-            color: #120e24;
-            border: 2px solid #ff0055;
-            text-shadow: none;
-            font-weight: 900;
-        }
-        .theme-cyberpunk .comma { color: #ff0055; }
-
-        /* 3. Minimalist Light */
-        .theme-light .odometer-container {
-            background: #ffffff;
-            border: 2px solid #e2e8f0;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-        }
-        .theme-light .digit-box {
-            background: #f8fafc;
-            color: #0f172a;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .theme-light .comma { color: #334155; }
-
-        /* 4. Glassmorphism */
-        .theme-glass .odometer-container {
-            background: rgba(255, 255, 255, 0.07);
+        /* Glassmorphism custom utilities */
+        .glass-panel {
+            background: rgba(19, 14, 36, 0.75);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
         }
-        .theme-glass .digit-box {
-            background: rgba(255, 255, 255, 0.12);
+
+        .glass-input {
+            background: rgba(10, 8, 18, 0.7);
+            border: 1px solid rgba(139, 92, 246, 0.3);
             color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px);
-        }
-        .theme-glass .comma { color: #ffffff; }
-
-        /* 5. Gold Luxury */
-        .theme-gold .odometer-container {
-            background: linear-gradient(145deg, #1f1a0a, #0a0803);
-            border: 2px solid #d4af37;
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
-        }
-        .theme-gold .digit-box {
-            background: linear-gradient(180deg, #d4af37 0%, #aa7c11 100%);
-            color: #000000;
-            border: 1px solid #fff3a8;
-            font-weight: 900;
-        }
-        .theme-gold .comma { color: #d4af37; }
-
-        /* Pulse live indicator */
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #22c55e;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 0 rgba(34, 197, 94, 0.7);
-            animation: pulse 1.6s infinite;
+            transition: all 0.3s ease;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        .glass-input:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+            outline: none;
         }
 
-        /* Scrollbar styles */
+        /* Jar liquid wave styling */
+        .liquid-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0 0 35px 35px;
+        }
+
+        .liquid-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(180deg, #a855f7 0%, #6d28d9 60%, #4c1d95 100%);
+            transition: height 1s ease-in-out;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6) inset;
+        }
+
+        .liquid-fill::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 20px;
+            top: -10px;
+            left: -50%;
+            background: rgba(251, 191, 36, 0.4);
+            border-radius: 40%;
+            animation: wave 3s ease-in-out infinite alternate;
+        }
+
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #0f172a;
+            background: rgba(10, 8, 18, 0.8);
         }
         ::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: #6d28d9;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: #8b5cf6;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between antialiased">
+<body class="text-slate-100 min-h-screen font-sans flex flex-col justify-between selection:bg-purple-600 selection:text-white">
 
-    <!-- Navigation Header -->
-    <header class="border-b border-gray-800 bg-gray-900/60 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <!-- Navbar Header -->
+    <header class="w-full glass-panel border-b border-purple-900/40 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo / Title -->
             <div class="flex items-center space-x-3">
-                <div class="bg-gradient-to-r from-blue-500 to-cyan-400 p-2 rounded-xl text-black">
-                    <i class="fa-solid fa-chart-line text-xl"></i>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center font-black text-xl text-black shadow-lg shadow-purple-500/30">
+                    M
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-white leading-tight">LiveVisits<span class="text-cyan-400">.io</span></h1>
-                    <p class="text-xs text-gray-400">Генератор лічильників відвідувачів для GitHub</p>
+                    <h1 class="font-extrabold tracking-wider text-xl bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400">
+                        MAJESTIC <span class="text-white text-xs px-2 py-0.5 rounded bg-purple-900/60 border border-purple-500/30 ml-1">RP</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 tracking-wider uppercase font-semibold">Сбор Средств / Crowdfunding</p>
                 </div>
             </div>
-            
-            <div class="flex items-center space-x-4">
-                <button id="soundToggle" onclick="toggleSound()" class="px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 transition flex items-center gap-2">
-                    <i id="soundIcon" class="fa-solid fa-volume-xmark text-red-400"></i>
-                    <span id="soundText" class="hidden sm:inline">Звук: Вимкнено</span>
-                </button>
-                <a href="#github-embed" class="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition flex items-center gap-2">
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleGithubModal()" class="px-4 py-2 rounded-xl text-xs font-semibold glass-input hover:bg-purple-900/40 text-purple-300 transition duration-300 flex items-center gap-2">
                     <i class="fa-brands fa-github text-base"></i>
-                    <span>Отримати Код</span>
-                </a>
+                    <span class="hidden sm:inline">Как загрузить на GitHub</span>
+                </button>
+                <button onclick="resetDataPrompt()" title="Сбросить данные" class="p-2 rounded-xl glass-input hover:bg-red-900/40 text-slate-400 hover:text-red-400 transition duration-300">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-10">
-
-        <!-- Hero Display Section -->
-        <section class="bg-gradient-to-b from-gray-900 to-slate-950 rounded-2xl border border-gray-800 p-6 sm:p-10 text-center relative overflow-hidden shadow-2xl">
-            <!-- Background Decorative Glow -->
-            <div class="absolute -top-24 -left-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
-                <span class="pulse-dot"></span> Жива Статистика В Режимі Реального часу
-            </div>
-
-            <h2 class="text-2xl sm:text-4xl font-extrabold text-white mb-2">
-                Загальна Кількість Відвідувачів
-            </h2>
-            <p class="text-gray-400 max-w-xl mx-auto text-sm sm:text-base mb-8">
-                Симуляція динамiчного популярного ресурсу. Мінімум <span class="text-cyan-400 font-bold">1 000 000+</span> переглядів з автоматичним рандомним приростом.
-            </p>
-
-            <!-- Big Main Counter -->
-            <div class="flex flex-col items-center justify-center my-4">
-                <div id="mainCounterWrapper" class="theme-dark-neon">
-                    <div id="counterContainer" class="odometer-container mono">
-                        <!-- Digits rendered dynamically by JS -->
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Column: Goal Summary & Visual Jar (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Target Card -->
+            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden animate-pulse-glow">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-amber-400 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-crosshairs"></i> Главная Цель
+                        </span>
+                        <h2 class="text-2xl font-black text-white mt-1">На Большую Мечту</h2>
                     </div>
-                </div>
-            </div>
-
-            <!-- Stats Bar Under Counter -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mt-8 pt-6 border-t border-gray-800 text-left">
-                <div class="bg-gray-800/40 p-3 rounded-xl border border-gray-800">
-                    <span class="text-xs text-gray-400 block mb-1">Зараз на сайті</span>
-                    <span id="activeNowVal" class="text-lg font-bold text-emerald-400 mono">1,429 осіб</span>
-                </div>
-                <div class="bg-gray-800/40 p-3 rounded-xl border border-gray-800">
-                    <span class="text-xs text-gray-400 block mb-1">Приріст / хв</span>
-                    <span id="ratePerMinVal" class="text-lg font-bold text-cyan-400 mono">+180-450</span>
-                </div>
-                <div class="bg-gray-800/40 p-3 rounded-xl border border-gray-800">
-                    <span class="text-xs text-gray-400 block mb-1">Країна лідер</span>
-                    <span class="text-lg font-bold text-amber-400 flex items-center gap-1.5">
-                        <span id="topCountryFlag">🇺🇦</span> <span id="topCountryName">Україна</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm">
+                        GTA 5 RP
                     </span>
                 </div>
-                <div class="bg-gray-800/40 p-3 rounded-xl border border-gray-800">
-                    <span class="text-xs text-gray-400 block mb-1">Аптайм виджету</span>
-                    <span class="text-lg font-bold text-purple-400 mono">99.99%</span>
+
+                <!-- Numbers Display -->
+                <div class="my-4">
+                    <div class="flex justify-between items-baseline mb-1">
+                        <span class="text-sm text-slate-400">Собрано:</span>
+                        <span id="raised-text" class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500">
+                            $0
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-400 font-semibold">
+                        <span>Цель: <strong class="text-slate-200" id="target-text">$8,000,000</strong></span>
+                        <span id="percent-text" class="text-purple-400 font-bold">0%</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-900/80 h-4 rounded-full overflow-hidden p-0.5 border border-purple-900/50 relative">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-purple-600 via-pink-500 to-amber-400 rounded-full transition-all duration-1000 ease-out w-0 relative">
+                        <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
                 </div>
             </div>
-        </section>
 
-        <!-- Customization and Widget Controls Grid -->
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- Left Controls Column (5 Cols) -->
-            <div class="lg:col-span-5 bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-6">
-                <div class="flex items-center gap-3 border-b border-gray-800 pb-4">
-                    <i class="fa-solid fa-sliders text-cyan-400 text-xl"></i>
-                    <h3 class="text-lg font-bold text-white">Налаштування Лічильника</h3>
-                </div>
+            <!-- The Majestic Jar / Piggy Bank Container -->
+            <div class="glass-panel rounded-3xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-jar text-amber-400 text-lg"></i> Магическая Баночка
+                </h3>
 
-                <!-- Theme Selection -->
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Виберіть Візуальну Тему</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <button onclick="setTheme('theme-dark-neon')" class="theme-btn border border-cyan-500/50 bg-slate-900 p-2.5 rounded-xl text-left flex items-center gap-3 hover:border-cyan-400 transition group">
-                            <span class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]"></span>
-                            <span class="text-sm font-medium text-white group-hover:text-cyan-300">Dark Neon</span>
-                        </button>
-                        <button onclick="setTheme('theme-cyberpunk')" class="theme-btn border border-gray-700 bg-slate-900 p-2.5 rounded-xl text-left flex items-center gap-3 hover:border-pink-500 transition group">
-                            <span class="w-4 h-4 rounded-full bg-pink-500 shadow-[0_0_8px_#ff0055]"></span>
-                            <span class="text-sm font-medium text-white group-hover:text-pink-300">Cyberpunk</span>
-                        </button>
-                        <button onclick="setTheme('theme-light')" class="theme-btn border border-gray-700 bg-slate-900 p-2.5 rounded-xl text-left flex items-center gap-3 hover:border-slate-300 transition group">
-                            <span class="w-4 h-4 rounded-full bg-slate-200"></span>
-                            <span class="text-sm font-medium text-white group-hover:text-gray-200">Minimal Light</span>
-                        </button>
-                        <button onclick="setTheme('theme-glass')" class="theme-btn border border-gray-700 bg-slate-900 p-2.5 rounded-xl text-left flex items-center gap-3 hover:border-purple-400 transition group">
-                            <span class="w-4 h-4 rounded-full bg-purple-400/80 shadow-[0_0_8px_#c084fc]"></span>
-                            <span class="text-sm font-medium text-white group-hover:text-purple-300">Glassmorphism</span>
-                        </button>
-                        <button onclick="setTheme('theme-gold')" class="theme-btn border border-gray-700 bg-slate-900 p-2.5 rounded-xl text-left flex items-center gap-3 hover:border-amber-400 transition group sm:col-span-2">
-                            <span class="w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]"></span>
-                            <span class="text-sm font-medium text-white group-hover:text-amber-300">Gold Luxury</span>
-                        </button>
-                    </div>
-                </div>
+                <!-- Visual Jar Element -->
+                <div class="relative w-48 h-64 border-4 border-purple-400/40 rounded-b-[40px] rounded-t-[15px] bg-slate-950/60 shadow-[0_0_30px_rgba(139,92,246,0.2)] flex flex-col justify-end overflow-hidden backdrop-blur-md">
+                    <!-- Glass Shine Highlight -->
+                    <div class="absolute top-0 left-3 w-3 h-full bg-gradient-to-b from-white/30 via-white/10 to-transparent rounded-full z-20 pointer-events-none"></div>
+                    <div class="absolute top-2 right-3 w-1.5 h-full bg-gradient-to-b from-white/20 to-transparent rounded-full z-20 pointer-events-none"></div>
+                    
+                    <!-- Jar Lid -->
+                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-40 h-5 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 rounded-t-md border-b border-amber-800 z-30 shadow-md"></div>
 
-                <!-- Minimum Base Visitor Counter Slider -->
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <label class="text-gray-300 font-medium">Базовий Стартовий Мінімум</label>
-                        <span id="baseValDisplay" class="text-cyan-400 font-bold mono">1,000,000</span>
-                    </div>
-                    <input type="range" id="baseRange" min="1000000" max="50000000" step="250000" value="1000000" 
-                           oninput="updateBaseValue(this.value)" 
-                           class="w-full accent-cyan-400 bg-gray-800 h-2 rounded-lg appearance-none cursor-pointer">
-                    <p class="text-xs text-gray-500">Задає початкову відправну точку (мін. 1 мільйон, макс. 50 мільйонів).</p>
-                </div>
-
-                <!-- Update Speed Slider -->
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <label class="text-gray-300 font-medium">Швидкість Оновлення (сек)</label>
-                        <span id="speedValDisplay" class="text-cyan-400 font-bold mono">1.5s</span>
-                    </div>
-                    <input type="range" id="speedRange" min="0.5" max="5" step="0.5" value="1.5" 
-                           oninput="updateSpeedValue(this.value)" 
-                           class="w-full accent-cyan-400 bg-gray-800 h-2 rounded-lg appearance-none cursor-pointer">
-                    <p class="text-xs text-gray-500">Інтервал між часом генерування нових переглядів.</p>
-                </div>
-
-                <!-- Random Increment Step Slider -->
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <label class="text-gray-300 font-medium">Максимальний Крок Рандому</label>
-                        <span id="stepValDisplay" class="text-cyan-400 font-bold mono">+15 відвідувачів</span>
-                    </div>
-                    <input type="range" id="stepRange" min="1" max="100" step="1" value="15" 
-                           oninput="updateStepValue(this.value)" 
-                           class="w-full accent-cyan-400 bg-gray-800 h-2 rounded-lg appearance-none cursor-pointer">
-                </div>
-
-                <!-- Reset / Boost Action Buttons -->
-                <div class="pt-2 flex gap-3">
-                    <button onclick="manualBoost(100)" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
-                        <i class="fa-solid fa-rocket"></i>
-                        <span>+100 Буст</span>
-                    </button>
-                    <button onclick="resetCounter()" class="py-2.5 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-semibold rounded-xl text-xs sm:text-sm transition border border-gray-700">
-                        <i class="fa-solid fa-rotate-left"></i>
-                        <span>Скидати</span>
-                    </button>
-                </div>
-
-            </div>
-
-            <!-- Right Analytics Dashboard Simulation (7 Cols) -->
-            <div class="lg:col-span-7 bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
-                
-                <div class="flex items-center justify-between border-b border-gray-800 pb-4">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-chart-area text-purple-400 text-xl"></i>
-                        <h3 class="text-lg font-bold text-white">Моніторинг Трафіку В Реальному Часі</h3>
-                    </div>
-                    <span class="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/30 px-2.5 py-1 rounded-full font-mono">Live Graph</span>
-                </div>
-
-                <!-- Chart Canvas Container -->
-                <div class="relative w-full h-48 sm:h-56">
-                    <canvas id="trafficChart"></canvas>
-                </div>
-
-                <!-- Country Breakdown & Live Activity Feed -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <!-- Top Traffic Sources -->
-                    <div class="bg-gray-950/60 p-4 rounded-xl border border-gray-800">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-                            <span>Топ Країн</span>
-                            <i class="fa-solid fa-globe text-gray-600"></i>
-                        </h4>
-                        <ul class="space-y-2 text-xs">
-                            <li class="flex items-center justify-between">
-                                <span class="flex items-center gap-2"><span class="text-base">🇺🇦</span> Україна</span>
-                                <span class="font-mono text-cyan-400 font-semibold">42%</span>
-                            </li>
-                            <li class="flex items-center justify-between">
-                                <span class="flex items-center gap-2"><span class="text-base">🇺🇸</span> США</span>
-                                <span class="font-mono text-gray-300">24%</span>
-                            </li>
-                            <li class="flex items-center justify-between">
-                                <span class="flex items-center gap-2"><span class="text-base">🇩🇪</span> Німеччина</span>
-                                <span class="font-mono text-gray-300">15%</span>
-                            </li>
-                            <li class="flex items-center justify-between">
-                                <span class="flex items-center gap-2"><span class="text-base">🇵🇱</span> Польща</span>
-                                <span class="font-mono text-gray-300">11%</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Live Log stream -->
-                    <div class="bg-gray-950/60 p-4 rounded-xl border border-gray-800 flex flex-col justify-between">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                            <span>Жива Стрічка Подій</span>
-                            <span class="pulse-dot"></span>
-                        </h4>
-                        <div id="liveActivityLog" class="space-y-2 text-xs font-mono text-gray-300 overflow-hidden h-28 flex flex-col justify-end">
-                            <!-- Populated dynamically by JS -->
+                    <!-- Liquid Inside -->
+                    <div id="jar-liquid" class="liquid-fill" style="height: 0%;">
+                        <!-- Floating Gold Coins inside Liquid -->
+                        <div class="absolute inset-0 opacity-40 pointer-events-none">
+                            <i class="fa-solid fa-coins absolute left-4 bottom-6 text-amber-300 animate-float text-sm"></i>
+                            <i class="fa-solid fa-sack-dollar absolute right-6 bottom-12 text-amber-200 animate-float text-xs" style="animation-delay: 1s;"></i>
+                            <i class="fa-solid fa-gem absolute left-12 bottom-16 text-purple-200 animate-float text-xs" style="animation-delay: 1.5s;"></i>
                         </div>
                     </div>
+
+                    <!-- Percentage Overlay inside Jar -->
+                    <div class="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                        <span id="jar-percent" class="text-3xl font-black text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">0%</span>
+                    </div>
                 </div>
 
+                <p class="text-xs text-slate-400 text-center mt-4 max-w-xs">
+                    Баночка наполняется в реальном времени при добавлении новых пожертвований!
+                </p>
             </div>
+
         </section>
 
-        <!-- Embed Code Generator Section -->
-        <section id="github-embed" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800 pb-4">
-                <div>
-                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-brands fa-github text-cyan-400"></i>
-                        <span>Експорт Коду для GitHub README та Веб-сайтів</span>
-                    </h3>
-                    <p class="text-xs sm:text-sm text-gray-400 mt-1"> Скопіюйте готовий код та вставте у свій профіль GitHub чи будь-який HTML проект.</p>
+        <!-- Right Column: Contribution Form & Leaderboard (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+
+            <!-- Donation Input Form -->
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 relative">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="p-3 bg-purple-600/20 border border-purple-500/30 rounded-2xl text-purple-400">
+                        <i class="fa-solid fa-hand-holding-dollar text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Внести Пожертвование</h2>
+                        <p class="text-xs text-slate-400">Укажите ваш никнейм на сервере и сумму</p>
+                    </div>
                 </div>
 
-                <!-- Export Format Tabs -->
-                <div class="flex bg-gray-950 p-1 rounded-xl border border-gray-800 self-start sm:self-auto">
-                    <button onclick="setEmbedTab('markdown')" id="tab-markdown" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gray-800 transition">
-                        GitHub Markdown
+                <form id="donation-form" onsubmit="handleDonate(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Nickname Input -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1 tracking-wider uppercase">
+                                <i class="fa-solid fa-user text-purple-400 mr-1"></i> Никнейм (Ник)
+                            </label>
+                            <input type="text" id="donor-nick" required placeholder="Ivan_Ivanov" 
+                                class="w-full px-4 py-3 rounded-xl glass-input text-sm font-semibold placeholder:text-slate-600 focus:ring-1 focus:ring-purple-500">
+                        </div>
+
+                        <!-- Amount Input -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1 tracking-wider uppercase">
+                                <i class="fa-solid fa-dollar-sign text-amber-400 mr-1"></i> Сумма ($)
+                            </label>
+                            <input type="number" id="donor-amount" required min="1" step="any" placeholder="50000" 
+                                class="w-full px-4 py-3 rounded-xl glass-input text-sm font-semibold placeholder:text-slate-600 focus:ring-1 focus:ring-purple-500">
+                        </div>
+                    </div>
+
+                    <!-- Quick Amount Shortcuts -->
+                    <div class="flex flex-wrap gap-2 pt-1">
+                        <button type="button" onclick="setQuickAmount(10000)" class="px-3 py-1 rounded-lg text-xs font-semibold glass-input hover:border-amber-400/50 hover:text-amber-300 transition">+10,000$</button>
+                        <button type="button" onclick="setQuickAmount(50000)" class="px-3 py-1 rounded-lg text-xs font-semibold glass-input hover:border-amber-400/50 hover:text-amber-300 transition">+50,000$</button>
+                        <button type="button" onclick="setQuickAmount(100000)" class="px-3 py-1 rounded-lg text-xs font-semibold glass-input hover:border-amber-400/50 hover:text-amber-300 transition">+100,000$</button>
+                        <button type="button" onclick="setQuickAmount(500000)" class="px-3 py-1 rounded-lg text-xs font-semibold glass-input hover:border-amber-400/50 hover:text-amber-300 transition">+500,000$</button>
+                        <button type="button" onclick="setQuickAmount(1000000)" class="px-3 py-1 rounded-lg text-xs font-semibold glass-input hover:border-amber-400/50 hover:text-amber-300 transition">+1,000,000$</button>
+                    </div>
+
+                    <!-- Comment Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1 tracking-wider uppercase">
+                            <i class="fa-solid fa-comment-dots text-purple-400 mr-1"></i> Сообщение / Пожелание (Необязательно)
+                        </label>
+                        <input type="text" id="donor-comment" placeholder="На новый семейный дом!" 
+                            class="w-full px-4 py-3 rounded-xl glass-input text-sm placeholder:text-slate-600">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-purple-500 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-extrabold uppercase tracking-wider text-sm shadow-lg shadow-purple-600/30 transition duration-300 transform active:scale-[0.99] flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> Скинуть Денег
                     </button>
-                    <button onclick="setEmbedTab('html')" id="tab-html" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition">
-                        HTML Widget
-                    </button>
-                    <button onclick="setEmbedTab('js')" id="tab-js" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition">
-                        JavaScript SDK
-                    </button>
-                </div>
+                </form>
             </div>
 
-            <!-- Code Display Area -->
-            <div class="relative group">
-                <pre id="codeOutput" class="bg-gray-950 border border-gray-800 p-4 sm:p-5 rounded-xl font-mono text-xs sm:text-sm text-cyan-300 overflow-x-auto leading-relaxed">
-<!-- Code snippets injected here by JS -->
-                </pre>
+            <!-- Leaderboard / History Log -->
+            <div class="glass-panel rounded-3xl p-6 flex flex-col flex-grow">
                 
-                <button onclick="copyCodeToClipboard()" class="absolute top-3 right-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow-lg">
-                    <i class="fa-regular fa-copy"></i>
-                    <span id="copyBtnText">Скопіювати</span>
-                </button>
+                <!-- Filter Tabs & Title -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol text-amber-400"></i> История Пополнений
+                        </h2>
+                        <p class="text-xs text-slate-400">Список всех участников сбора</p>
+                    </div>
+
+                    <!-- Sorting controls -->
+                    <div class="flex p-1 bg-slate-950/60 rounded-xl border border-purple-900/40 text-xs self-start sm:self-auto">
+                        <button id="sort-recent-btn" onclick="setSortMode('recent')" class="px-3 py-1.5 rounded-lg font-semibold text-white bg-purple-600 transition">
+                            Последние
+                        </button>
+                        <button id="sort-top-btn" onclick="setSortMode('top')" class="px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition">
+                            Топ Топ-Скинувших
+                        </button>
+                    </div>
+                </div>
+
+                <!-- List Output -->
+                <div id="donations-list" class="space-y-3 max-h-[380px] overflow-y-auto pr-2">
+                    <!-- Dynamic Items will be rendered here -->
+                </div>
+
             </div>
 
-            <!-- GitHub Instructions Box -->
-            <div class="bg-slate-950/70 border border-blue-900/40 rounded-xl p-4 flex gap-3 items-start text-xs sm:text-sm text-gray-300">
-                <i class="fa-solid fa-circle-info text-cyan-400 text-lg mt-0.5"></i>
-                <div class="space-y-1">
-                    <p class="font-semibold text-white">Як додати у свій GitHub Profile README?</p>
-                    <ol class="list-decimal list-inside space-y-1 text-gray-400 text-xs">
-                        <li>Відкрийте репозиторій з назвою вашого GitHub нікнейму.</li>
-                        <li>Відкрийте файл <code class="text-cyan-300 bg-gray-900 px-1 py-0.5 rounded">README.md</code> для редагування.</li>
-                        <li>Вставте скопійований Markdown badge у потрібне місце (наприклад, у сам верх).</li>
-                        <li>Збережіть коміт — бейдж автоматично показуватиме стильний графічний лічильник!</li>
-                    </ol>
-                </div>
-            </div>
-        </section>
-
-        <!-- FAQ / Feature Highlights -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-gray-900/60 border border-gray-800 p-5 rounded-xl space-y-2">
-                <div class="w-10 h-10 bg-cyan-500/10 text-cyan-400 rounded-lg flex items-center justify-center font-bold text-lg mb-2">
-                    <i class="fa-solid fa-bolt"></i>
-                </div>
-                <h4 class="font-bold text-white text-base">Миттєва Синхронізація</h4>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Алгоритм динамічно вираховує реалістичний приріст на основі часу доби та часового поясу, гарантуючи природній вигляд.
-                </p>
-            </div>
-
-            <div class="bg-gray-900/60 border border-gray-800 p-5 rounded-xl space-y-2">
-                <div class="w-10 h-10 bg-purple-500/10 text-purple-400 rounded-lg flex items-center justify-center font-bold text-lg mb-2">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h4 class="font-bold text-white text-base">Безпечно & Без Ключів</h4>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Генеровані плашки та бейджі не потребують API ключів чи складних налаштувань серверу.
-                </p>
-            </div>
-
-            <div class="bg-gray-900/60 border border-gray-800 p-5 rounded-xl space-y-2">
-                <div class="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-lg flex items-center justify-center font-bold text-lg mb-2">
-                    <i class="fa-solid fa-palette"></i>
-                </div>
-                <h4 class="font-bold text-white text-base">Гнучкі Теми</h4>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Обирайте між кількома дизайнерськими пресетами: від мінімалістичного світлого до агресивного киберпанку.
-                </p>
-            </div>
         </section>
 
     </main>
 
-    <footer class="border-t border-gray-800 bg-gray-950 py-6 mt-12 text-center text-xs text-gray-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>© 2026 LiveVisits.io — Онлайн Генератор Лічильників Відвідувачів.</p>
-            <div class="flex items-center gap-4 text-gray-400">
-                <a href="#" class="hover:text-cyan-400 transition">Документація</a>
-                <a href="#" class="hover:text-cyan-400 transition">GitHub SVG Badge API</a>
-                <a href="#" class="hover:text-cyan-400 transition">Контакти</a>
-            </div>
+    <!-- Footer -->
+    <footer class="w-full border-t border-purple-900/30 glass-panel py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            <p>Стилизовано под <span class="text-purple-400 font-semibold">Majestic RP</span> • Сохранение данных работает локально в вашем браузере (LocalStorage).</p>
         </div>
     </footer>
 
+    <!-- GitHub Pages Guide Modal -->
+    <div id="github-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-2xl w-full rounded-3xl p-6 sm:p-8 relative border border-purple-500/40 shadow-2xl">
+            <button onclick="toggleGithubModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-3 bg-purple-600/20 border border-purple-500/30 rounded-2xl text-purple-300">
+                    <i class="fa-brands fa-github text-2xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white">Инструкция: Публикация на GitHub Pages</h3>
+                    <p class="text-xs text-purple-300">Бесплатный хостинг вашего сайта за 2 минуты</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-purple-900/40">
+                    <strong class="text-amber-400 block mb-1">Шаг 1: Создайте файл index.html</strong>
+                    <p>Скопируйте весь код этой страницы и сохраните его в файл с именем <code class="bg-black/50 px-2 py-0.5 rounded text-purple-300">index.html</code> на вашем компьютере.</p>
+                </div>
+
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-purple-900/40">
+                    <strong class="text-amber-400 block mb-1">Шаг 2: Создайте репозиторий на GitHub</strong>
+                    <p>Зайдите на <a href="https://github.com" target="_blank" class="text-purple-400 underline">GitHub.com</a>, нажмите <strong>New Repository</strong>. Назовите его, например, <code class="bg-black/50 px-2 py-0.5 rounded text-purple-300">majestic-goal</code> и выберите <strong>Public</strong>.</p>
+                </div>
+
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-purple-900/40">
+                    <strong class="text-amber-400 block mb-1">Шаг 3: Загрузите index.html</strong>
+                    <p>В созданном репозитории нажмите <strong>uploading an existing file</strong> и перетащите ваш файл <code class="bg-black/50 px-2 py-0.5 rounded text-purple-300">index.html</code>. Нажмите <strong>Commit changes</strong>.</p>
+                </div>
+
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-purple-900/40">
+                    <strong class="text-amber-400 block mb-1">Шаг 4: Включите GitHub Pages</strong>
+                    <p>Перейдите в <strong>Settings</strong> вашего репозитория ➔ вкладка <strong>Pages</strong> (слева). В разделе <em>Build and deployment / Branch</em> выберите ветку <code class="bg-black/50 px-2 py-0.5 rounded text-purple-300">main</code> (или <code class="bg-black/50 px-2 py-0.5 rounded text-purple-300">master</code>) и нажмите <strong>Save</strong>.</p>
+                </div>
+
+                <div class="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 text-amber-200">
+                    <i class="fa-solid fa-circle-info mr-1"></i> Готово! Через 1-2 минуты ваш сайт станет доступен по адресу: <br>
+                    <code class="text-xs bg-black/40 px-2 py-1 rounded mt-1 inline-block text-amber-300">https://твой-ник.github.io/majestic-goal/</code>
+                </div>
+            </div>
+
+            <button onclick="toggleGithubModal()" class="w-full mt-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider">
+                Понятно, закрыть
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
     <script>
+        // Constants
+        const TARGET_AMOUNT = 8000000; // 8 Million Target
+        const STORAGE_KEY = 'majestic_rp_donations_data_v2';
+
         // State variables
-        let baseCount = 1248590; // Default minimum starting over 1,000,000
-        let currentCount = baseCount;
-        let updateIntervalMs = 1500;
-        let maxStep = 15;
-        let soundEnabled = false;
-        let activeTheme = 'theme-dark-neon';
-        let currentTab = 'markdown';
-        let timerId = null;
+        let donations = [];
+        let currentSortMode = 'recent'; // 'recent' or 'top'
 
-        // Activity log city samples
-        const cities = [
-            { name: "Київ", flag: "🇺🇦" },
-            { name: "Токіо", flag: "🇯🇵" },
-            { name: "Нью-Йорк", flag: "🇺🇸" },
-            { name: "Лондон", flag: "🇬🇧" },
-            { name: "Берлін", flag: "🇩🇪" },
-            { name: "Варшава", flag: "🇵🇱" },
-            { name: "Львів", flag: "🇺🇦" },
-            { name: "Париж", flag: "🇫🇷" },
-            { name: "Сідней", flag: "🇦🇺 font" },
-            { name: "Торонто", flag: "🇨🇦" }
-        ];
+        // Load Initial Data on Startup
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStoredData();
+            updateUI();
+        });
 
-        // Web Audio API tick generator (No external MP3 files needed)
-        let audioCtx = null;
-        function playTickSound() {
-            if (!soundEnabled) return;
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.03);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.03);
-            } catch (e) {
-                console.error("Audio error", e);
-            }
-        }
-
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            const soundIcon = document.getElementById('soundIcon');
-            const soundText = document.getElementById('soundText');
-            if (soundEnabled) {
-                soundIcon.className = "fa-solid fa-volume-high text-emerald-400";
-                soundText.innerText = "Звук: Увімкнено";
-                playTickSound();
-            } else {
-                soundIcon.className = "fa-solid fa-volume-xmark text-red-400";
-                soundText.innerText = "Звук: Вимкнено";
-            }
-        }
-
-        // Render Odometer Digits
-        function renderCounter(num) {
-            const container = document.getElementById('counterContainer');
-            const formatted = num.toLocaleString('en-US'); // e.g. "1,248,590"
-            
-            // Re-render if character count changed, or update individual boxes
-            const currentBoxes = container.querySelectorAll('.digit-box, .comma');
-            
-            if (currentBoxes.length !== formatted.length) {
-                container.innerHTML = '';
-                for (let i = 0; i < formatted.length; i++) {
-                    const char = formatted[i];
-                    if (char === ',') {
-                        const commaSpan = document.createElement('span');
-                        commaSpan.className = 'comma';
-                        commaSpan.innerText = ',';
-                        container.appendChild(commaSpan);
-                    } else {
-                        const box = document.createElement('div');
-                        box.className = 'digit-box';
-                        box.setAttribute('data-index', i);
-                        
-                        const innerSpan = document.createElement('span');
-                        innerSpan.className = 'digit';
-                        innerSpan.innerText = char;
-                        box.appendChild(innerSpan);
-                        
-                        container.appendChild(box);
-                    }
+        // Load from LocalStorage or initialize default sample data
+        function loadStoredData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    donations = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Ошибка чтения LocalStorage:", e);
+                    donations = getInitialData();
                 }
             } else {
-                // Smoothly update existing digit boxes
-                let boxIndex = 0;
-                for (let i = 0; i < formatted.length; i++) {
-                    const char = formatted[i];
-                    if (char !== ',') {
-                        const box = currentBoxes[i];
-                        if (box && box.classList.contains('digit-box')) {
-                            const innerSpan = box.querySelector('.digit');
-                            if (innerSpan && innerSpan.innerText !== char) {
-                                innerSpan.innerText = char;
-                                box.classList.remove('changing');
-                                void box.offsetWidth; // Trigger reflow
-                                box.classList.add('changing');
-                            }
-                        }
-                    }
-                }
+                donations = getInitialData();
+                saveToLocalStorage();
             }
         }
 
-        // Live Random Counter Incrementor
-        function tickCounter() {
-            // Generate random increment based on slider
-            const increment = Math.floor(Math.random() * maxStep) + 1;
-            currentCount += increment;
-            renderCounter(currentCount);
-            playTickSound();
+        // Initial default donations (Only requested entries)
+        function getInitialData() {
+            return [
+                { id: 1, nick: 'Ева Елфи', amount: 0, comment: 'Первоначальный внос', date: new Date().toISOString() },
+                { id: 2, nick: 'Дженни Китти', amount: 0, comment: 'Первоначальный внос', date: new Date().toISOString() }
+            ];
+        }
 
-            // Update Chart Data dynamically
-            updateChartData(increment);
+        // Save current donations state to LocalStorage
+        function saveToLocalStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(donations));
+        }
 
-            // Add live log entry occasionally
-            if (Math.random() > 0.4) {
-                addLogEntry(increment);
+        // Add New Donation
+        function handleDonate(event) {
+            event.preventDefault();
+
+            const nickInput = document.getElementById('donor-nick');
+            const amountInput = document.getElementById('donor-amount');
+            const commentInput = document.getElementById('donor-comment');
+
+            const nick = nickInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const comment = commentInput.value.trim();
+
+            if (!nick || isNaN(amount) || amount <= 0) {
+                alert('Пожалуйста, введите корректный ник и сумму!');
+                return;
             }
 
-            // Update live active estimate
-            const activeEstimate = 1200 + Math.floor(Math.random() * 350);
-            document.getElementById('activeNowVal').innerText = `${activeEstimate.toLocaleString()} осіб`;
+            const newContribution = {
+                id: Date.now(),
+                nick: nick,
+                amount: amount,
+                comment: comment || 'Без сообщения',
+                date: new Date().toISOString()
+            };
+
+            donations.unshift(newContribution);
+            saveToLocalStorage();
+            updateUI();
+
+            // Reset Form fields
+            amountInput.value = '';
+            commentInput.value = '';
         }
 
-        function startTimer() {
-            if (timerId) clearInterval(timerId);
-            timerId = setInterval(tickCounter, updateIntervalMs);
+        // Set quick amount helper
+        function setQuickAmount(val) {
+            document.getElementById('donor-amount').value = val;
         }
 
-        // Customizer controls logic
-        function updateBaseValue(val) {
-            baseCount = parseInt(val, 10);
-            document.getElementById('baseValDisplay').innerText = baseCount.toLocaleString();
-            if (currentCount < baseCount) {
-                currentCount = baseCount;
-                renderCounter(currentCount);
+        // Calculate total raised amount
+        function getTotalRaised() {
+            return donations.reduce((sum, item) => sum + Number(item.amount), 0);
+        }
+
+        // Update UI Elements
+        function updateUI() {
+            const total = getTotalRaised();
+            const percentage = Math.min((total / TARGET_AMOUNT) * 100, 100).toFixed(1);
+
+            // Text Updates
+            document.getElementById('raised-text').innerText = formatCurrency(total);
+            document.getElementById('percent-text').innerText = `${percentage}%`;
+            document.getElementById('jar-percent').innerText = `${percentage}%`;
+
+            // Progress Bar Update
+            document.getElementById('progress-bar').style.width = `${Math.min(percentage, 100)}%`;
+
+            // Jar Liquid Fill Update
+            document.getElementById('jar-liquid').style.height = `${Math.min(percentage, 100)}%`;
+
+            // Render Leaderboard
+            renderLeaderboard();
+        }
+
+        // Render Leaderboard / History
+        function renderLeaderboard() {
+            const listContainer = document.getElementById('donations-list');
+            listContainer.innerHTML = '';
+
+            if (donations.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-xs">
+                        Пока нет пожертвований. Будьте первым!
+                    </div>
+                `;
+                return;
             }
-            updateEmbedCode();
-        }
 
-        function updateSpeedValue(val) {
-            updateIntervalMs = parseFloat(val) * 1000;
-            document.getElementById('speedValDisplay').innerText = `${val}s`;
-            startTimer();
-        }
+            // Copy array for sorting
+            let sortedList = [...donations];
 
-        function updateStepValue(val) {
-            maxStep = parseInt(val, 10);
-            document.getElementById('stepValDisplay').innerText = `+${val} відвідувачів`;
-        }
-
-        function manualBoost(amount) {
-            currentCount += amount;
-            renderCounter(currentCount);
-            playTickSound();
-            addLogEntry(amount, true);
-            updateEmbedCode();
-        }
-
-        function resetCounter() {
-            currentCount = baseCount;
-            renderCounter(currentCount);
-            updateEmbedCode();
-        }
-
-        function setTheme(themeName) {
-            activeTheme = themeName;
-            const wrapper = document.getElementById('mainCounterWrapper');
-            wrapper.className = themeName;
-            updateEmbedCode();
-        }
-
-        function addLogEntry(amount, isBoost = false) {
-            const logContainer = document.getElementById('liveActivityLog');
-            const city = cities[Math.floor(Math.random() * cities.length)];
-            const timeStr = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-            const logItem = document.createElement('div');
-            logItem.className = 'flex items-center justify-between text-gray-300 border-b border-gray-800/50 pb-1 animate-fade-in';
-            
-            if (isBoost) {
-                logItem.innerHTML = `<span class="text-emerald-400 font-bold">🚀 БУСТ +${amount}</span> <span class="text-gray-500">${timeStr}</span>`;
+            if (currentSortMode === 'top') {
+                sortedList.sort((a, b) => b.amount - a.amount);
             } else {
-                logItem.innerHTML = `<span>${city.flag} +${amount} відвідувач з м. ${city.name}</span> <span class="text-gray-500">${timeStr}</span>`;
+                sortedList.sort((a, b) => new Date(b.date) - new Date(a.date));
             }
 
-            logContainer.appendChild(logItem);
-            if (logContainer.children.length > 4) {
-                logContainer.removeChild(logContainer.firstChild);
-            }
-        }
+            sortedList.forEach((item, index) => {
+                const dateObj = new Date(item.date);
+                const formattedDate = dateObj.toLocaleDateString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
-        let trafficChart = null;
-        function initChart() {
-            const ctx = document.getElementById('trafficChart').getContext('2d');
-            
-            const initialLabels = Array.from({length: 12}, (_, i) => `${12 - i}s тому`);
-            const initialData = Array.from({length: 12}, () => Math.floor(Math.random() * 20) + 10);
-
-            trafficChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: initialLabels,
-                    datasets: [{
-                        label: 'Перегляди / сек',
-                        data: initialData,
-                        borderColor: '#a855f7',
-                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#c084fc'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false, drawBorder: false },
-                            ticks: { color: '#64748b', font: { size: 10 } }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#64748b', font: { size: 10 } },
-                            min: 0
-                        }
-                    }
+                // Crown badge for Top 3 in 'top' mode
+                let badgeHTML = '';
+                if (currentSortMode === 'top') {
+                    if (index === 0) badgeHTML = '<span class="text-amber-400 font-bold text-sm"><i class="fa-solid fa-crown"></i> #1</span>';
+                    else if (index === 1) badgeHTML = '<span class="text-slate-300 font-bold text-sm"><i class="fa-solid fa-medal"></i> #2</span>';
+                    else if (index === 2) badgeHTML = '<span class="text-amber-600 font-bold text-sm"><i class="fa-solid fa-award"></i> #3</span>';
+                    else badgeHTML = `<span class="text-slate-500 text-xs font-semibold">#${index + 1}</span>`;
                 }
+
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-2xl bg-slate-900/60 border border-purple-900/30 hover:border-purple-500/40 transition duration-300 flex items-center justify-between gap-3';
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-10 h-10 rounded-xl bg-purple-950/80 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 font-black">
+                            ${item.nick.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="truncate">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm text-white truncate">${escapeHTML(item.nick)}</span>
+                                ${badgeHTML}
+                            </div>
+                            <p class="text-xs text-slate-400 truncate mt-0.5">${escapeHTML(item.comment)}</p>
+                        </div>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                        <div class="font-extrabold text-sm text-amber-400">
+                            +${formatCurrency(item.amount)}
+                        </div>
+                        <div class="text-[10px] text-slate-500">
+                            ${formattedDate}
+                        </div>
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
             });
         }
 
-        function updateChartData(newValue) {
-            if (!trafficChart) return;
-            const data = trafficChart.data.datasets[0].data;
-            data.shift();
-            data.push(newValue);
-            trafficChart.update('none'); // Update without full redraw animation for performance
+        // Sorting Switch
+        function setSortMode(mode) {
+            currentSortMode = mode;
+            const recentBtn = document.getElementById('sort-recent-btn');
+            const topBtn = document.getElementById('sort-top-btn');
+
+            if (mode === 'recent') {
+                recentBtn.className = 'px-3 py-1.5 rounded-lg font-semibold text-white bg-purple-600 transition';
+                topBtn.className = 'px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+            } else {
+                topBtn.className = 'px-3 py-1.5 rounded-lg font-semibold text-white bg-purple-600 transition';
+                recentBtn.className = 'px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+            }
+
+            renderLeaderboard();
         }
 
-        function setEmbedTab(tab) {
-            currentTab = tab;
-            ['markdown', 'html', 'js'].forEach(t => {
-                const btn = document.getElementById(`tab-${t}`);
-                if (t === tab) {
-                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gray-800 transition";
-                } else {
-                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition";
-                }
-            });
-            updateEmbedCode();
-        }
-
-        function updateEmbedCode() {
-            const codeOutput = document.getElementById('codeOutput');
-            const cleanTheme = activeTheme.replace('theme-', '');
-
-            if (currentTab === 'markdown') {
-                codeOutput.innerText = `<!-- GitHub Profile Traffic Counter Badge -->\n[![Live Traffic Counter](https://img.shields.io/badge/Visitors-${currentCount.toLocaleString()}-00f0ff?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117)](https://github.com)`;
-            } else if (currentTab === 'html') {
-                codeOutput.innerText = `<!-- LiveVisits.io Embedded Counter Widget -->\n<div class="live-visits-widget" \n     data-base="${baseCount}" \n     data-theme="${cleanTheme}" \n     data-auto-increment="true">\n  <span>Загалом переглядів: <strong>${currentCount.toLocaleString()}</strong></span>\n</div>\n<script src="https://cdn.livevisits.io/widget.js" async><\/script>`;
-            } else if (currentTab === 'js') {
-                codeOutput.innerText = `// JavaScript Live Counter Script\nimport { createCounter } from 'livevisits-sdk';\n\nconst counter = createCounter('#counter-element', {\n  initialValue: ${currentCount},\n  theme: '${cleanTheme}',\n  updateInterval: ${updateIntervalMs},\n  maxRandomStep: ${maxStep}\n});\n\ncounter.start();`;
+        // Reset Data Prompt
+        function resetDataPrompt() {
+            if (confirm('Вы уверены, что хотите сбросить все пожертвования и восстановить начальные данные?')) {
+                donations = getInitialData();
+                saveToLocalStorage();
+                updateUI();
             }
         }
 
-        function copyCodeToClipboard() {
-            const codeText = document.getElementById('codeOutput').innerText;
-            
-            // Clipboard copy fallbacks
-            const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = codeText;
-            document.body.appendChild(tempTextArea);
-            tempTextArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempTextArea);
-
-            const copyBtnText = document.getElementById('copyBtnText');
-            copyBtnText.innerText = "Скопійовано!";
-            setTimeout(() => {
-                copyBtnText.innerText = "Скопіювати";
-            }, 2000);
+        // Helper: Format Number into $ Currency
+        function formatCurrency(val) {
+            return '$' + Number(val).toLocaleString('en-US');
         }
 
-        // Window load initialization
+        // Helper: Escape HTML to prevent XSS
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
